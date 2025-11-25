@@ -1,0 +1,41 @@
+.story-input-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.input-section {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.story-preview {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #0c0c0c;
+    border-radius: 5px;
+}
+
+.extracted-info {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #000;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.proceed-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.proceed-button:hover {
+    background-color: #0056b3;
+}
