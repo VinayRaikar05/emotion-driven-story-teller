@@ -1,0 +1,21 @@
+2025-11-24 22:15:33.738884: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-11-24 22:15:36.386327: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\api.py", line 9, in <module>
+    from parser_gender import *
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\parser_gender.py", line 13, in <module>
+    from llama_index.core import SimpleDirectoryReader
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\venv\Lib\site-packages\llama_index\core\__init__.py", line 10, in <module>
+    from llama_index.core.base.response.schema import Response
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\venv\Lib\site-packages\llama_index\core\base\response\schema.py", line 7, in <module>
+    from llama_index.core.async_utils import asyncio_run
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\venv\Lib\site-packages\llama_index\core\async_utils.py", line 7, in <module>
+    import llama_index.core.instrumentation as instrument
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\venv\Lib\site-packages\llama_index\core\instrumentation\__init__.py", line 5, in <module>
+    from llama_index.core.instrumentation.dispatcher import (
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\venv\Lib\site-packages\llama_index\core\instrumentation\dispatcher.py", line 7, in <module>
+    from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
+  File "D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\venv\Lib\site-packages\llama_index\core\bridge\pydantic.py", line 2, in <module>
+    from pydantic import (
+ImportError: cannot import name 'Secret' from 'pydantic' (D:\emotion-driven-storyteller-main\emotion-driven-storyteller\backend\models\venv\Lib\site-packages\pydantic\__init__.py)
