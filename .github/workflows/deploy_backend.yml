@@ -1,0 +1,24 @@
+name: Deploy Backend to Hugging Face
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push Backend to Hugging Face Space
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: https://oauth2:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/${{ secrets.HF_USERNAME }}/${{ secrets.HF_SPACE_NAME }}
+          BRANCH: main
+          FOLDER: backend
+          MESSAGE: "Sync backend from GitHub: {msg}"

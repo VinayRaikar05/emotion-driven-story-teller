@@ -1,102 +1,70 @@
-# � Simple & Free Deployment Guide
+# 🚀 Simple Deployment Guide
 
-Deploy your **Emotion-Driven Storyteller** for free in less than 15 minutes.
-
-This simplified setup uses:
-- **Backend**: Hugging Face Spaces (Free CPU Basic)
-- **Frontend**: Vercel (Free Static Hosting)
-- **Process**: Synchronous generation (No Redis or S3 required!)
-
----
-
-## 🛠️ Prerequisites
-1. **GitHub Account**: [Sign up](https://github.com/)
-2. **Hugging Face Account**: [Sign up](https://huggingface.co/join)
-3. **Vercel Account**: [Sign up](https://vercel.com/signup)
-4. **ElevenLabs API Key**: [Get it here](https://elevenlabs.io/) (Click Profile -> API Key)
+This guide connects your **GitHub Repository** to **Hugging Face** and **Vercel**. 
+Once set up, every time you push code to GitHub, your app updates automatically.
 
 ---
 
 ## Part 1: Backend Deployment (Hugging Face)
 
-1. **Create a Space**:
-    - Go to [huggingface.co/new-space](https://huggingface.co/new-space).
-    - **Space Name**: `emotion-storyteller-backend`.
-    - **License**: `MIT`.
-    - **SDK**: `Docker`.
-    - **Hardware**: `Cpu basic (2 vCPU · 16GB · FREE)`.
-    - Click **Create Space**.
+**Goal**: Setup a Space and connect it to GitHub.
 
-2. **Upload Code (Git Push Method)**:
-    - **Option A: Direct Git Push (Easiest)**
-        1. On your local machine, navigate to your `backend` folder:
-           ```bash
-           cd backend
-           ```
-        2. Initialize git (if not already): `git init`
-        3. Add your Hugging Face Space as a remote:
-           ```bash
-           git remote add space https://huggingface.co/spaces/YOUR_USERNAME/emotion-storyteller-backend
-           ```
-        4. Force push your code:
-           ```bash
-           git add .
-           git commit -m "Deploy backend"
-           git push -f space master:main
-           ```
-           *(Note: You'll be asked for your HF Username and Password. For password, use an **Access Token** with 'write' permissions from your HF Settings).*
+1.  **Create a Hugging Face Space**:
+    *   Go to [huggingface.co/new-space](https://huggingface.co/new-space).
+    *   Name: `emotion-storyteller-backend` (or similar).
+    *   SDK: **Docker**.
+    *   Hardware: **Free (2 vCPU)**.
+    *   Click **Create Space**.
 
-    - **Option B: Connect GitHub Repo**:
-        1. Push your code to a generic GitHub repository first.
-        2. In your Hugging Face Space, go to **Settings** -> **Git Repository** -> **Connect/Sync with GitHub**.
-        3. Authorize and select your repo.
+2.  **Get Your Access Token**:
+    *   Go to [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
+    *   Click **Create new token**.
+    *   Permissions: **Write** (Repositories).
+    *   Copy the token (starts with `hf_...`).
 
-3. **Configure Environment Variables**:
-    - Click the **Settings** tab.
-    - Scroll to **Variables and secrets**.
-    - Add the following **Secrets** (Private):
-        - `ELEVENLABS_API_KEY`: `(Paste your actual key)`
-    - Add the following **Variables** (Public):
-        - `NO_REDIS`: `true` (This enables the simple mode without S3/Redis)
-        - `CORS_ORIGINS`: `*` (Allows access from any frontend for simplicity)
+3.  **Connect GitHub to Hugging Face**:
+    *   Go to your **GitHub Repository** -> **Settings** -> **Secrets and variables** -> **Actions**.
+    *   Click **New repository secret**.
+    *   Add these 3 secrets:
+        1.  `HF_TOKEN`: (Paste the token you copied)
+        2.  `HF_USERNAME`: (Your Hugging Face username)
+        3.  `HF_SPACE_NAME`: (The name of your space, e.g., `emotion-storyteller-backend`)
+    *   *I have already added the deployment script to your code. As soon as you add these secrets and push a change, it will deploy!*
 
-4. **Wait for Build**:
-    - Click the **App** tab. You will see "Building".
-    - Wait ~3-5 minutes. When it says "Running", copy the **Direct URL**.
-    - *Tip*: Click the "Embed this space" menu (top right) -> Copy **Direct URL**. It looks like: `https://username-space-name.hf.space`.
+4.  **Configure Backend Variables**:
+    *   Go to your Hugging Face Space -> **Settings**.
+    *   Scroll to **Variables and secrets**.
+    *   **Secrets**: Add `ELEVENLABS_API_KEY`.
+    *   **Variables**: Add `NO_REDIS` = `true`.
+    *   **Variables**: Add `CORS_ORIGINS` = `*`.
 
 ---
 
 ## Part 2: Frontend Deployment (Vercel)
 
-1. **Push Code to GitHub**:
-    - If you haven't already, push your code to your own GitHub repository.
+**Goal**: Host the webpage.
 
-2. **Import to Vercel**:
-    - Go to [vercel.com/new](https://vercel.com/new).
-    - Under "Import Git Repository", find your repo and click **Import**.
+1.  **Import to Vercel**:
+    *   Go to [vercel.com/new](https://vercel.com/new).
+    *   Import your GitHub repository.
 
-3. **Configure Building**:
-    - **Framework Preset**: `Vite`.
-    - **Root Directory**: Click "Edit" and select `frontend`.
+2.  **Configure Project**:
+    *   **Framework**: Vite (should prevent auto-detection).
+    *   **Root Directory**: Click Edit -> Select `frontend`.
 
-4. **Add Environment Variable**:
-    - Expand **Environment Variables**.
-    - Key: `VITE_API_URL`
-    - Value: `https://YOUR-HF-SPACE-URL.hf.space` (The URL you copied in Part 1).
-    - *Important*: Do NOT include a trailing slash `/`.
+3.  **Connect to Backend**:
+    *   Expand **Environment Variables**.
+    *   Key: `VITE_API_URL`
+    *   Value: `https://YOUR-HF-SPACE-URL.hf.space` (Find this in your HF Space -> "Embed this space" -> Direct URL).
+    *   *Note: Remove any trailing slash `/` from the URL.*
 
-5. **Deploy**:
-    - Click **Deploy**.
-    - Wait ~1 minute. When fireworks appear, click the preview image to visit your live site!
+4.  **Deploy**:
+    *   Click **Deploy**.
 
 ---
 
 ## 🎉 Done!
-Your app is now live.
-
-### How it works in this mode:
-- When you click "Generate Audio", the request goes to your HF Backend.
-- The backend processes the story ensuring the "Playlist Mode" is active.
-- Audio is returned directly to your browser for playback.
-- **Note on Free Tier**: The generation makes a long request (30-60s). If it times out, retry with a shorter story segment.
+- Update code on your computer.
+- `git push origin main`.
+- Watch GitHub Actions tab to see it deploy to Hugging Face automatically.
+- Vercel updates automatically too.
