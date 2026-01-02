@@ -16,11 +16,16 @@ Once set up, every time you push code to GitHub, your app updates automatically.
     *   Hardware: **Free (2 vCPU)**.
     *   Click **Create Space**.
 
-2.  **Get Your Access Token**:
-    *   Go to [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
-    *   Click **Create new token**.
-    *   Permissions: **Write** (Repositories).
-    *   Copy the token (starts with `hf_...`).
+2.  **Get Your Access Token (Step-by-Step)**:
+    *   **Login**: Log in to your Hugging Face account.
+    *   **Settings**: Click your profile picture (top right) -> **Settings**.
+    *   **Access Tokens**: In the left sidebar, click **Access Tokens**.
+    *   **Create**: Click the button **Create new token**.
+    *   **Configure**:
+        *   **Token type**: Select **Write** (This is crucial, "Read" won't work).
+        *   **Name**: Enter `deployment-token` (or any name).
+        *(Note: If the UI asks for granular permissions, ensure "Repositories" > "Write" is checked).*
+    *   **Copy**: Click **Create token** and copy the string that starts with `hf_...`. **Save this!** You won't see it again.
 
 3.  **Connect GitHub to Hugging Face**:
     *   Go to your **GitHub Repository** -> **Settings** -> **Secrets and variables** -> **Actions**.
