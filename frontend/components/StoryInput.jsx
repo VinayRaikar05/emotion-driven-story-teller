@@ -36,6 +36,9 @@ const StoryInput = () => {
   }
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
 
+  // Use environment variable for backend URL, default to localhost
+  const BACKEND_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
   // 📌 Handle File Upload
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
@@ -49,7 +52,8 @@ const StoryInput = () => {
         formData.append("file", file);
 
         // Updated endpoint to match the backend
-        const response = await fetch("http://localhost:8000/upload-script", {
+        // Updated endpoint to match the backend
+        const response = await fetch(`${BACKEND_URL}/upload-script`, {
           method: "POST",
           body: formData,
           headers: {
@@ -201,7 +205,7 @@ const StoryInput = () => {
           emotion: null,
         })),
       };
-      const response = await fetch("http://localhost:8000/detect-emotions", {
+      const response = await fetch(`${BACKEND_URL}/detect-emotions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -231,7 +235,7 @@ const StoryInput = () => {
 
     try {
       // 1. Start the job
-      const response = await fetch("http://localhost:8000/generate-audio", {
+      const response = await fetch(`${BACKEND_URL}/generate-audio`, {
         method: "POST",
       });
 
@@ -276,7 +280,7 @@ const StoryInput = () => {
 
       const pollInterval = setInterval(async () => {
         try {
-          const statusRes = await fetch(`http://localhost:8000/jobs/${jobId}`);
+          const statusRes = await fetch(`${BACKEND_URL}/jobs/${jobId}`);
           const statusData = await statusRes.json();
 
           if (statusData.status === "completed") {
