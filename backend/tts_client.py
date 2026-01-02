@@ -344,7 +344,8 @@ def merge_audio_files(audio_files: List[str], job_id: str) -> Union[str, List[st
                     "-q:a", "2", silence_path
                 ], check=True, capture_output=True)
                 
-                f.write(f"file '{silence_path.replace('\\', '/')}'\n")
+                safe_silence_path = silence_path.replace('\\', '/')
+                f.write(f"file '{safe_silence_path}'\n")
                 silence_files.append(silence_path)
 
         # Run ffmpeg concat
