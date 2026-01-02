@@ -210,21 +210,10 @@ pytest tests/test_tts_client.py::test_retry_with_backoff -v
 
 ## 📊 Deployment
 
-### Local (Development)
-```bash
-docker-compose up
-```
+### Completely Free Stack (Recommended)
+This project is optimized for deployment on **Hugging Face Spaces** (Backend) and **Vercel** (Frontend).
 
-### Cloud (Production)
-
-**Recommended Stack**:
-- **Frontend**: Vercel (auto-deploy from GitHub)
-- **Backend**: Render.com or Google Cloud Run
-- **Storage**: AWS S3
-- **Redis**: Redis Cloud (free tier) or Render Redis
-- **Estimated Cost**: ~$10-30/month
-
-See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for detailed guides.
+👉 **[Read the Complete Free Deployment Guide](deployment_guide.md)**
 
 ---
 

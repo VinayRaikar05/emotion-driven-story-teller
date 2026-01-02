@@ -7,6 +7,28 @@ const StoryInput = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [playlist, setPlaylist] = useState([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const audioRef = React.useRef(null);
+
+  // Auto-play when audioUrl changes
+  React.useEffect(() => {
+    if (audioUrl && audioRef.current) {
+      audioRef.current.load(); // Reload the element with new source
+      audioRef.current.play().catch(e => console.error("Autoplay failed:", e));
+    }
+  }, [audioUrl]);
+
+  // Helper to convert base64 to blob
+  const base64ToBlob = (base64, type = "audio/mpeg") => {
+    const binaryString = window.atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return new Blob([bytes], { type });
+  };
 
   const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
   if (!API_KEY) {
@@ -217,15 +239,36 @@ const StoryInput = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      // Check content type first
+      const contentType = response.headers.get("content-type");
 
-      // If backend returns a file directly (legacy mode), handle it
-      if (response.headers.get("content-type")?.includes("audio")) {
+      // If backend returns a file directly (legacy mode / NO_REDIS), handle it
+      if (contentType && contentType.includes("audio")) {
         const audioBlob = await response.blob();
-        const url = URL.createObjectURL(audioBlob);
+        // Create blob with explicit type to ensure browser plays it
+        const typedBlob = new Blob([audioBlob], { type: "audio/mpeg" });
+        const url = URL.createObjectURL(typedBlob);
         setAudioUrl(url);
+        setIsGeneratingAudio(false);
         return;
       }
+
+      // Otherwise expect JSON response
+      const data = await response.json();
+
+      // Handle Playlist Response (NO_REDIS + No FFmpeg)
+      if (data.type === "audio_playlist") {
+        const segments = data.data; // Array of base64 strings
+        const urls = segments.map(b64 => URL.createObjectURL(base64ToBlob(b64)));
+
+        setPlaylist(urls);
+        setCurrentTrackIndex(0);
+        setAudioUrl(urls[0]);
+        setIsGeneratingAudio(false);
+        return;
+      }
+
+      // 2. Poll for completion (Async job details)
 
       // 2. Poll for completion
       const jobId = data.job_id;
@@ -244,10 +287,6 @@ const StoryInput = () => {
 
             // If local dev and no S3, we might need to fetch the file blob
             if (!downloadUrl) {
-              // Fallback to fetching the file if no URL provided (legacy behavior support)
-              // But for now, let's assume the backend provides a URL or we can fetch it
-              // For this specific setup, we might need a dedicated download endpoint if not using S3
-              // Let's assume the backend returns a presigned URL or public URL
               console.error("No download URL provided in completed job");
               alert("Audio generated but no download URL found.");
               return;
@@ -416,29 +455,51 @@ const StoryInput = () => {
 
           {audioUrl && (
             <div className="w-full max-w-md animate-fade-in">
-              <audio controls className="w-full mt-4" src={audioUrl}>
+              <audio
+                key={audioUrl}
+                controls
+                autoPlay
+                className="w-full mt-4"
+                src={audioUrl}
+                onEnded={() => {
+                  if (currentTrackIndex < playlist.length - 1) {
+                    const nextIndex = currentTrackIndex + 1;
+                    setCurrentTrackIndex(nextIndex);
+                    setAudioUrl(playlist[nextIndex]);
+                  }
+                }}
+              >
                 Your browser does not support the audio element.
               </audio>
-              <a
-                href={audioUrl}
-                download="story_audio.mp3"
-                className="mt-2 text-accent-red hover:text-accent-red/80 flex items-center justify-center gap-2"
-              >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {/* Only show download if it's a single file, or maybe just disable download for playlist because it's tricky? 
+                  With playlist, audioUrl changes. It's fine to download individual segments. */}
+              {playlist.length === 0 && (
+                <a
+                  href={audioUrl}
+                  download="story_audio.mp3"
+                  className="mt-2 text-accent-red hover:text-accent-red/80 flex items-center justify-center gap-2"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                  />
-                </svg>
-                Download Audio
-              </a>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  Download Audio
+                </a>
+              )}
+              {playlist.length > 0 && (
+                <p className="text-sm text-gray-400 text-center mt-2">
+                  Playing segment {currentTrackIndex + 1} of {playlist.length} (Playlist Mode)
+                </p>
+              )}
             </div>
           )}
         </div>

@@ -1,5 +1,8 @@
 FROM python:3.10-slim
 
+# Set up a new user named "user" with user ID 1000
+RUN useradd -m -u 1000 user
+
 WORKDIR /app
 
 # Install system dependencies
@@ -14,13 +17,16 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY . .
+COPY --chown=user . .
 
 # Set Python path
 ENV PYTHONPATH="${PYTHONPATH}:/app"
 
-# Expose port
-EXPOSE 8000
+# Switch to the "user" user
+USER user
 
-# Default command (can be overridden for worker)
-CMD ["uvicorn", "models.api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose port (Hugging Face Spaces defaults to 7860)
+EXPOSE 7860
+
+# Default command
+CMD ["uvicorn", "models.api:app", "--host", "0.0.0.0", "--port", "7860"]

@@ -4,6 +4,11 @@ import json
 import sys
 import logging
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,6 +62,14 @@ logging.basicConfig(
     format='%(message)s'  # JSON format will be added by middleware
 )
 logger = logging.getLogger(__name__)
+
+# Log environment (Mask API key)
+no_redis = os.getenv("NO_REDIS", "false").lower() == "true"
+logger.info(f"Startup Config: NO_REDIS={no_redis}")
+if os.getenv("ELEVENLABS_API_KEY"):
+    logger.info("ElevenLabs API Key: Present")
+else:
+    logger.warning("ElevenLabs API Key: MISSING")
 
 app = FastAPI()
 
@@ -207,6 +220,58 @@ async def generate_audio():
     Enqueue TTS generation job (async).
     Returns immediately with job_id for polling.
     """
+    # Check for NO_REDIS mode (Local testing without infrastructure)
+    if os.getenv("NO_REDIS", "false").lower() == "true":
+        logger.info("NO_REDIS mode: Processing synchronously")
+        try:
+            # Import here to avoid circular dependencies or strict requirements
+            try:
+                from backend.tts_client import generate_story_audio
+            except ImportError:
+                import sys
+                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                from tts_client import generate_story_audio
+            
+            # Get story data
+            story_path = os.path.join(os.path.dirname(__file__), "story.json")
+            
+            if not os.path.exists(story_path):
+                raise HTTPException(
+                    status_code=400,
+                    detail="No story data found. Please process the story with /detect-emotions first."
+                )
+            
+            with open(story_path, 'r') as f:
+                story_data = json.load(f)
+            
+            # Generate audio synchronously
+            job_id = f"local_{int(datetime.now().timestamp())}"
+            audio_result = generate_story_audio(story_data, job_id)
+            
+            # Check if we got a playlist (list of files) or a single merged file
+            if isinstance(audio_result, list):
+                # Playlist mode (ffmpeg missing)
+                import base64
+                encoded_segments = []
+                for file_path in audio_result:
+                    if os.path.exists(file_path):
+                        with open(file_path, "rb") as audio_file:
+                            encoded_bytes = base64.b64encode(audio_file.read()).decode('utf-8')
+                            encoded_segments.append(encoded_bytes)
+                
+                return {
+                    "type": "audio_playlist",
+                    "data": encoded_segments,
+                    "message": "Generated audio segments (ffmpeg missing)"
+                }
+            else:
+                # Merged file mode
+                return FileResponse(audio_result, media_type="audio/mpeg", filename="final_story.mp3")
+            
+        except Exception as e:
+            logger.error(f"Error in NO_REDIS generation: {str(e)}")
+            raise HTTPException(status_code=500, detail=str(e))
+
     if not ASYNC_JOBS_AVAILABLE:
         # Fallback to legacy sync mode if async not available
         logger.warning("Using legacy synchronous TTS generation")

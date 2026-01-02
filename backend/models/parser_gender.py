@@ -31,45 +31,107 @@ def parse_dialogues_and_narration(text):
     """Extracts dialogues and narration correctly, ensuring proper grouping."""
     dialogues = []
     lines = text.split("\n")
-    narration_buffer = []
 
     for line in lines:
         line = line.strip()
-
-        # Skip empty lines
         if not line:
             continue
 
-        # Identify and extract narration
-        while "(" in line and ")" in line:
-            before, narration, after = re.split(r"\((.*?)\)", line, 1)
+        # Strategy:
+        # 1. Attempt to parse as Dialogue Line "Name: Content"
+        # 2. If valid dialogue, handle Name (strip attrs) and Content (extract narration)
+        # 3. If NOT dialogue, extract any narration (...) and treat rest as Narration from "Narrator" if significant.
 
-            # Add any narration found
-            if narration.strip():
-                narration_buffer.append(narration.strip())
+        # Regex for Dialogue Line: Name (up to 50 chars) + Colon + Content
+        # We use a broad regex and refine later
+        # Allowing (...) in name part
+        dialogue_match = re.match(r"^([\w\s\.\(\)\"“”'-]{1,50}):\s*(.*)", line)
+        
+        is_dialogue = False
+        if dialogue_match:
+            raw_name = dialogue_match.group(1).strip()
+            raw_content = dialogue_match.group(2).strip()
+            
+            # Check: Name shouldn't be PURELY parens like "(One Day)" -> That's narration
+            if not (raw_name.startswith("(") and raw_name.endswith(")")):
+                is_dialogue = True
+                
+                # 1. Clean Name
+                # Remove parentheticals (attributes)
+                clean_name = re.sub(r"\s*\(.*?\)", "", raw_name).strip()
+                
+                # Filter out likely metadata or non-characters
+                IGNORED_NAMES = {"Title", "Author", "By", "Page", "Scene", "Act", "Chapter", "Date", "Time", "Setting"}
+                if clean_name in IGNORED_NAMES or len(clean_name) > 30 or not clean_name:
+                    is_dialogue = False # False alarm, probably metadata
+                else:
+                     # 2. Process Content for Narration
+                     # Extract "(...)" from content as separate narration entries
+                     # But we need to preserve order.
+                     # "Hello (smiles) friend" -> "Hello", "Narrator: smiles", "friend"
+                     # Complex to split. strict "dialogue" list entry doesn't support sub-narration well
+                     # unless we split into multiple entries?
+                     # For now, let's just strip narration from dialogue for Audio purity, 
+                     # OR keep it if it's acting instruction?
+                     # The current system treats "Narrator" as a separate block.
+                     
+                     # Simple approach: Extract narration to buffer BEFORE/AFTER? 
+                     # Usually (action) is visual. 
+                     # Let's extract all (...) from content and add as Narrator lines?
+                     # Risk: "friend" part might be lost or split.
+                     # Let's keep it simple: Strip (...) from dialogue for TTS (cleaned), 
+                     # but maybe we don't need to extract it as separate Narrator line if it's just action?
+                     # User complaint: "cant detect story... audio not playable... emotions incorrect"
+                     # Reading "(smiles)" is annoying.
+                     
+                     narration_in_dialogue = re.findall(r"\((.*?)\)", raw_content)
+                     # Optional: Add these as narrator lines? 
+                     # If I add them, I need to know where (before/after).
+                     # Let's just add them AFTER for now (simplified), or IGNORE (clean audio).
+                     # User wants "correct detection".
+                     # Reading "(smiles)" is annoying.
+                     
+                     clean_dialogue = re.sub(r"\s*\(.*?\)", "", raw_content).strip()
+                     
+                     # Remove quotes
+                     if (clean_dialogue.startswith('"') and clean_dialogue.endswith('"')) or \
+                        (clean_dialogue.startswith('“') and clean_dialogue.endswith('”')):
+                         clean_dialogue = clean_dialogue[1:-1].strip()
 
-            # Process remaining text after narration
-            line = after.strip()
+                     if clean_dialogue:
+                        dialogues.append({
+                            "name": clean_name,
+                            "dialogue": clean_dialogue
+                        })
+                        
+                     # If we found narration in dialogue, maybe append it after?
+                     # for narr in narration_in_dialogue:
+                     #    dialogues.append({"name": "Narrator", "dialogue": narr, "predicted_gender": "Male"})
+                     # Let's Skip this for now to keep it clean.
 
-        # If narration was found and processed, add it to the list
-        if narration_buffer:
-            dialogues.append({
-                "name": "Narrator",
-                "dialogue": " ".join(narration_buffer),
-                "predicted_gender": "Male"
-            })
-            narration_buffer = []
-
-        # Process character dialogue (everything outside `()`)
-        if line:
-            match = re.match(r"^(\w+):\s*\"(.*?)\"", line)
-            if match:
-                char_name = match.group(1)
-                char_dialogue = match.group(2)
-
-                dialogues.append({
-                    "name": char_name,
-                    "dialogue": char_dialogue
+        if not is_dialogue:
+            # Not a dialogue line (or was metadata)
+            # Treat as Narration / Description
+            
+            # Extract all (...)
+            while "(" in line and ")" in line:
+                before, narration, after = re.split(r"\((.*?)\)", line, 1)
+                if narration.strip():
+                     dialogues.append({
+                        "name": "Narrator", 
+                        "dialogue": narration.strip(),
+                        "predicted_gender": "Male"
+                    })
+                line = str(before) + " " + str(after)
+                line = line.strip()
+            
+            # If text remains (unquoted, unparenthesized description)
+            # ex: "The rain had been falling..."
+            if line:
+                 dialogues.append({
+                    "name": "Narrator",
+                    "dialogue": line,
+                    "predicted_gender": "Male"
                 })
 
     return dialogues

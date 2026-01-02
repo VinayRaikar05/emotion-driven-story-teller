@@ -6,7 +6,7 @@ Production-ready implementation with proper error handling.
 import os
 import time
 import requests
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Union
 from threading import Semaphore
 from functools import wraps
 import logging
@@ -218,7 +218,7 @@ class TTSClient:
             return circuit_breaker.call(make_request)
 
 
-def generate_story_audio(story_data: List[Dict], job_id: str) -> str:
+def generate_story_audio(story_data: List[Dict], job_id: str) -> Union[str, List[str]]:
     """
     Generate complete story audio from dialogue data.
     Orchestrates multiple TTS calls and merges them.
@@ -228,7 +228,7 @@ def generate_story_audio(story_data: List[Dict], job_id: str) -> str:
         job_id: Job identifier for file naming
         
     Returns:
-        Path to generated MP3 file
+        Path to generated MP3 file OR List of paths (if merge failed/skipped)
     """
     api_key = os.getenv('ELEVENLABS_API_KEY')
     if not api_key:
@@ -295,23 +295,23 @@ def generate_story_audio(story_data: List[Dict], job_id: str) -> str:
     return merged_path
 
 
-def merge_audio_files(audio_files: List[str], job_id: str) -> str:
-    """
-    Merge multiple audio files with dynamic pauses using ffmpeg directly.
-    Replaces pydub implementation to avoid Python 3.13 audioop dependency issues.
-    
-    Args:
-        audio_files: List of paths to audio files
-        job_id: Job identifier
-        
-    Returns:
-        Path to merged MP3 file
-    """
-    if not shutil.which("ffmpeg"):
-        raise RuntimeError("ffmpeg not found in PATH")
 
+
+def merge_audio_files(audio_files: List[str], job_id: str) -> Union[str, List[str]]:
+    """
+    Merge multiple audio files.
+    Tries to use ffmpeg for high quality merge with pauses.
+    Returns list of input files if ffmpeg is missing (Playlist Mode).
+    """
     output_path = f"/tmp/final_story_{job_id}.mp3"
-    
+
+    # Fallback to playlist mode if ffmpeg is not installed
+    # Browser cannot play concatenated mp3s reliably, so we return the list
+    if not shutil.which("ffmpeg"):
+        logger.warning("ffmpeg not found in PATH. Returning unmerged file list for playlist playback.")
+        return audio_files
+
+    # FFmpeg implementation
     # Generate silence files first (easier than complex filter generation for variable lengths)
     silence_files = []
     temp_dir = f"/tmp/audio_{job_id}"
@@ -319,51 +319,57 @@ def merge_audio_files(audio_files: List[str], job_id: str) -> str:
     
     concat_list_path = os.path.join(temp_dir, "concat_list.txt")
     
-    with open(concat_list_path, "w") as f:
-        for i, file_path in enumerate(audio_files):
-            if not os.path.exists(file_path):
-                logger.warning(f"Skipping missing file: {file_path}")
-                continue
+    try:
+        with open(concat_list_path, "w") as f:
+            for i, file_path in enumerate(audio_files):
+                if not os.path.exists(file_path):
+                    logger.warning(f"Skipping missing file: {file_path}")
+                    continue
+                    
+                # Add the audio file
+                # Escape path for ffmpeg concat file
+                safe_path = file_path.replace("\\", "/")
+                f.write(f"file '{safe_path}'\n")
                 
-            # Add the audio file
-            # Escape path for ffmpeg concat file
-            safe_path = file_path.replace("\\", "/")
-            f.write(f"file '{safe_path}'\n")
-            
-            # Determine pause duration
-            pause_duration_ms = 500
-            if i == len(audio_files) - 1:
-                pause_duration_ms += 500
+                # Determine pause duration
+                pause_duration_ms = 500
+                if i == len(audio_files) - 1:
+                    pause_duration_ms += 500
+                    
+                # Create silence file
+                silence_path = os.path.join(temp_dir, f"silence_{i}.mp3")
+                subprocess.run([
+                    "ffmpeg", "-y", "-f", "lavfi", "-i", 
+                    f"anullsrc=r=24000:cl=mono", "-t", f"{pause_duration_ms/1000}", 
+                    "-q:a", "2", silence_path
+                ], check=True, capture_output=True)
                 
-            # Create silence file
-            silence_path = os.path.join(temp_dir, f"silence_{i}.mp3")
+                f.write(f"file '{silence_path.replace('\\', '/')}'\n")
+                silence_files.append(silence_path)
+
+        # Run ffmpeg concat
+        try:
             subprocess.run([
-                "ffmpeg", "-y", "-f", "lavfi", "-i", 
-                f"anullsrc=r=24000:cl=mono", "-t", f"{pause_duration_ms/1000}", 
-                "-q:a", "2", silence_path
+                "ffmpeg", "-y", "-f", "concat", "-safe", "0", 
+                "-i", concat_list_path, "-c", "copy", output_path
             ], check=True, capture_output=True)
             
-            f.write(f"file '{silence_path.replace('\\', '/')}'\n")
-            silence_files.append(silence_path)
-
-    # Run ffmpeg concat
-    try:
-        subprocess.run([
-            "ffmpeg", "-y", "-f", "concat", "-safe", "0", 
-            "-i", concat_list_path, "-c", "copy", output_path
-        ], check=True, capture_output=True)
-        
-        logger.info(f"Merged audio saved to {output_path}")
-        
-        # Cleanup silence files
-        for sf in silence_files:
-            if os.path.exists(sf):
-                os.remove(sf)
-        if os.path.exists(concat_list_path):
-            os.remove(concat_list_path)
+            logger.info(f"Merged audio saved to {output_path}")
             
-        return output_path
-        
-    except subprocess.CalledProcessError as e:
-        logger.error(f"ffmpeg merge failed: {e.stderr}")
-        raise
+            # Cleanup silence files
+            for sf in silence_files:
+                if os.path.exists(sf):
+                    os.remove(sf)
+            if os.path.exists(concat_list_path):
+                os.remove(concat_list_path)
+                
+            return output_path
+            
+        except subprocess.CalledProcessError as e:
+            logger.error(f"ffmpeg merge failed: {e.stderr}. Fallback to playlist mode.")
+            # Fallback to playlist mode
+            return audio_files
+
+    except Exception as e:
+        logger.error(f"Error during audio merge: {str(e)}. Fallback to playlist mode.")
+        return audio_files
