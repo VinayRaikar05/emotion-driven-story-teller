@@ -312,6 +312,3 @@ MIT License - See [LICENSE](LICENSE)
 
 ---
 
-### 🌟 If this helped you, please star the repo!
-
-**Built with ❤️ as a portfolio project demonstrating production-ready software engineering practices.**
