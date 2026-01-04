@@ -3,25 +3,81 @@
 @tailwind utilities;
 
 @layer base {
+  /* Import Google Fonts */
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
   body {
-    @apply bg-gray-900 text-gray-100 min-h-screen;
+    @apply bg-bg-900 text-gray-100 min-h-screen font-sans antialiased overflow-x-hidden;
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(100, 255, 218, 0.05) 0%, transparent 25%), 
+        radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 25%);
+    background-attachment: fixed;
+  }
+
+  /* Custom Scrollbar for Chrome/Safari/Edge */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-glass-300 rounded-full hover:bg-primary-500 transition-colors;
   }
 }
 
 @layer components {
-  .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 ease-in-out;
+  /* Premium Glass Card */
+  .card-glass {
+    @apply relative overflow-hidden rounded-2xl border border-glass-border shadow-xl backdrop-blur-md bg-glass-gradient transition-all duration-300;
   }
   
-  .btn-primary {
-    @apply btn bg-primary-500 hover:bg-primary-600 text-white;
+  .card-glass::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-t from-transparent via-transparent to-white/5 opacity-0 transition-opacity duration-300 pointer-events-none;
   }
   
-  .card {
-    @apply bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-all duration-300 animate-fade-in;
+  .card-glass:hover::before {
+    @apply opacity-100;
   }
   
-  .input-field {
-    @apply w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all duration-200;
+  .card-glass:hover {
+    @apply border-primary-500/30 shadow-primary-500/10;
   }
+
+  /* Glowing Button */
+  .btn-cosmic {
+    @apply relative px-6 py-3 rounded-full font-semibold font-display tracking-wide text-white overflow-hidden transition-all duration-300 shadow-lg border border-transparent;
+    background: linear-gradient(90deg, #0ea5e9, #a855f7);
+    background-size: 200% 200%;
+    animation: gradientShift 6s ease infinite;
+  }
+  
+  .btn-cosmic:hover {
+    @apply shadow-primary-500/25 scale-105;
+    background-position: 100% 50%;
+  }
+  
+  .btn-cosmic:disabled {
+    @apply opacity-50 cursor-not-allowed grayscale scale-100 shadow-none;
+  }
+
+  /* Modern Input */
+  .input-cosmic {
+    @apply w-full px-5 py-3 bg-glass-100 rounded-xl border border-glass-border 
+    text-white placeholder-gray-400 font-sans transition-all duration-200
+    focus:border-primary-400 focus:bg-glass-200 focus:ring-1 focus:ring-primary-400 focus:outline-none;
+  }
+
+  /* Text Gradient Utility */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-aurora-text font-bold;
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
 }

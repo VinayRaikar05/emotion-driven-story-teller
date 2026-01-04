@@ -324,28 +324,29 @@ const StoryInput = () => {
         Story Input
       </h2>
       {/* File Upload Section */}
-      <div className="card flex flex-col items-center justify-center">
-        <h3 className="text-2xl font-semibold text-primary-200 mb-4 text-center">
+      <div className="card-glass flex flex-col items-center justify-center p-10 animate-slide-up">
+        <h3 className="text-3xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-300 to-secondary-300 mb-6 text-center">
           Upload Story File
         </h3>
-        <label className="block w-full max-w-md text-center">
+        <label className="block w-full max-w-lg text-center relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 to-secondary-400 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
           <input
             type="file"
             accept=".pdf"
             onChange={handleFileUpload}
-            className="input-field w-full file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-600 file:text-white hover:file:bg-primary-700 cursor-pointer text-center"
+            className="relative input-cosmic file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-600 file:text-white hover:file:bg-primary-500 cursor-pointer text-center shadow-2xl"
           />
         </label>
       </div>
       {/* Story Generation Section */}
-      <div className="card">
-        <h3 className="text-2xl font-semibold text-primary-200 mb-4">
-          Or Generate Story
+      <div className="card-glass p-8 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+        <h3 className="text-2xl font-bold text-gray-200 mb-6 flex items-center gap-3">
+          <span className="text-secondary-400">✨</span> Or Generate Story
         </h3>
         <button
           onClick={generateStory}
           disabled={isLoading}
-          className="btn-primary w-full md:w-auto disabled:opacity-50 disabled:cursor-not-allowed animate-pulse-slow"
+          className="btn-cosmic w-full md:w-auto"
         >
           {isLoading ? (
             <span className="flex items-center justify-center">
@@ -378,22 +379,24 @@ const StoryInput = () => {
       </div>
       {/* Story Preview Section */}
       {(fileContent || story) && (
-        <div className="space-y-6 animate-slide-up">
-          <div className="card">
-            <h3 className="text-2xl font-semibold text-primary-200 mb-4">
+        <div className="space-y-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="card-glass p-8">
+            <h3 className="text-2xl font-bold text-primary-300 mb-4 border-b border-glass-border pb-4">
               Story Content
             </h3>
-            <div className="text-gray-300 text-left font-mono space-y-4">
+            <div className="text-gray-300 text-left font-mono space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
               {extractedInfo.dialogues.map((entry, index) => (
-                <div key={index} className="flex items-start space-x-4 mb-2">
+                <div key={index} className="flex items-start space-x-4 mb-3 p-3 rounded-lg hover:bg-glass-100 transition-colors">
                   {entry.name === "Narrator" ? (
-                    <div className="flex-grow italic">[{entry.dialogue}]</div>
+                    <div className="flex-grow italic text-gray-400 border-l-2 border-gray-600 pl-4">
+                      {entry.dialogue}
+                    </div>
                   ) : (
                     <>
-                      <div className="w-24 flex-shrink-0 font-bold text-blue-400">
-                        {entry.name}:
+                      <div className="w-28 flex-shrink-0 font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-secondary-300 text-right">
+                        {entry.name}
                       </div>
-                      <div className="flex-grow">{entry.dialogue}</div>
+                      <div className="flex-grow text-gray-100">{entry.dialogue}</div>
                     </>
                   )}
                 </div>
@@ -402,11 +405,14 @@ const StoryInput = () => {
           </div>
 
           {/* Extracted Character Info */}
-          <div className="card">
-            <h3 className="text-2xl font-semibold text-primary-200 mb-4">
-              Extracted Dialogues
-            </h3>
-            <pre className="bg-gray-900 p-4 rounded-lg overflow-x-auto text-sm text-gray-300">
+          <div className="card-glass p-8">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-2xl font-bold text-secondary-300">
+                Data Analysis
+              </h3>
+              <span className="px-3 py-1 text-xs font-mono bg-glass-200 rounded-full text-primary-300">JSON Output</span>
+            </div>
+            <pre className="bg-bg-800/50 p-6 rounded-xl overflow-x-auto text-sm text-green-400 font-mono border border-glass-border shadow-inner">
               {JSON.stringify(extractedInfo, null, 2)}
             </pre>
           </div>
@@ -414,9 +420,9 @@ const StoryInput = () => {
           {/* Proceed Button */}
           <button
             onClick={proceedToEmotionDetection}
-            className="btn-primary w-full md:w-auto mx-auto block mt-8 text-lg animate-pulse-slow"
+            className="btn-cosmic w-full md:w-auto mx-auto block mt-8 text-lg"
           >
-            Proceed to Emotion Detection
+            Run Emotion Engine 🚀
           </button>
         </div>
       )}
@@ -426,21 +432,18 @@ const StoryInput = () => {
           <button
             onClick={handleGenerateAudio}
             disabled={isGeneratingAudio}
-            className={`px-6 py-3 bg-accent-red rounded-full 
-        transition-all duration-300 hover:bg-accent-red/80
-        disabled:opacity-50 disabled:cursor-not-allowed
-        flex items-center justify-center gap-2
+            className={`btn-cosmic px-8 py-4 text-xl flex items-center justify-center gap-3
         ${isGeneratingAudio ? "animate-pulse" : ""}`}
           >
             {isGeneratingAudio ? (
               <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Generating Audio...
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Synthesizing...
               </>
             ) : (
               <>
                 <svg
-                  className="w-5 h-5"
+                  className="w-6 h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -452,7 +455,7 @@ const StoryInput = () => {
                     d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728"
                   />
                 </svg>
-                Generate Audio
+                Generate Cinematic Audio
               </>
             )}
           </button>
