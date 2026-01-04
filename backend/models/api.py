@@ -270,6 +270,12 @@ async def generate_audio():
             
         except Exception as e:
             logger.error(f"Error in NO_REDIS generation: {str(e)}")
+            # Check for 401 Unauthorized specifically
+            if "401" in str(e) and "Unauthorized" in str(e):
+                raise HTTPException(
+                    status_code=401, 
+                    detail="ElevenLabs API Unauthorized: Invalid API Key or Quota Exceeded. Please check your ElevenLabs dashboard."
+                )
             raise HTTPException(status_code=500, detail=str(e))
 
     if not ASYNC_JOBS_AVAILABLE:
