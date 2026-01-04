@@ -297,7 +297,8 @@ def generate_story_audio(story_data: List[Dict], job_id: str) -> Union[str, List
             
             try:
                 # Determine fallback voice
-                gender = dialogue.get("predicted_gender", "male").lower()
+                raw_gender = dialogue.get("predicted_gender")
+                gender = raw_gender.lower() if raw_gender else "male"
                 name = dialogue["name"]
                 
                 if name == "Narrator":
