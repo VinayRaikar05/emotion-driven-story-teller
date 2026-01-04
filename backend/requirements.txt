@@ -25,3 +25,5 @@ pytest-asyncio
 httpx
 tf-keras
 python-dotenv
+edge-tts>=6.1.9
+aiofiles>=23.2.1

@@ -217,6 +217,18 @@ class TTSClient:
             
             return circuit_breaker.call(make_request)
 
+def generate_with_edge_tts(text: str, voice: str, output_path: str):
+    """Fallback generation using EdgeTTS CLI (prevents async loop conflicts)"""
+    try:
+        # Use simple CLI command
+        # Ensure text doesn't break CLI (basic sanitization)
+        sanitized_text = text.replace('"', '\\"')
+        cmd = ["edge-tts", "--text", text, "--write-media", output_path, "--voice", voice]
+        subprocess.run(cmd, check=True, capture_output=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(f"EdgeTTS failed: {e.stderr}")
+        raise
+
 
 def generate_story_audio(story_data: List[Dict], job_id: str) -> Union[str, List[str]]:
     """
@@ -280,8 +292,34 @@ def generate_story_audio(story_data: List[Dict], job_id: str) -> Union[str, List
                 time.sleep(2)
                 
         except Exception as e:
-            logger.error(f"Failed to generate audio for dialogue {i}: {e}")
-            raise
+            logger.warning(f"ElevenLabs generation failed for dialogue {i}: {e}. specific_error='{type(e).__name__}'")
+            logger.info("Attempting fallback to EdgeTTS (Free)...")
+            
+            try:
+                # Determine fallback voice
+                gender = dialogue.get("predicted_gender", "male").lower()
+                name = dialogue["name"]
+                
+                if name == "Narrator":
+                    edge_voice = "en-US-ChristopherNeural"
+                elif gender == "female":
+                    edge_voice = "en-US-AriaNeural"
+                else:
+                    edge_voice = "en-US-GuyNeural"
+                
+                # Define path (same as intended)
+                file_path = os.path.join(output_dir, f"{i:04d}_{dialogue['name']}_{emotion}.mp3")
+                
+                # Generate
+                generate_with_edge_tts(dialogue["dialogue"], edge_voice, file_path)
+                
+                audio_files.append(file_path)
+                logger.info(f"Fallback successful for dialogue {i}")
+                
+            except Exception as fallback_error:
+                logger.error(f"Both ElevenLabs and EdgeTTS failed for dialogue {i}: {fallback_error}")
+                # We can choose to skip this line or raise. Raising ensures transparency.
+                raise e # Raise original error if fallback also fails
     
     # Merge all audio files
     logger.info(f"Merging {len(audio_files)} audio files")
