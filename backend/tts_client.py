@@ -142,7 +142,7 @@ class TTSClient:
     def __init__(self, api_key: str):
         if not api_key:
             raise ValueError("ElevenLabs API key is required")
-        self.api_key = api_key
+        self.api_key = api_key.strip()
         self.base_url = "https://api.elevenlabs.io/v1"
         self.character_voice_mapping = {}
         self.available_male_voices = ["male_1", "male_2", "male_3"]
