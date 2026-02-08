@@ -298,17 +298,5 @@ This is a portfolio project, but issues and PRs are welcome!
 
 ---
 
-## 📄 License
 
-MIT License - See [LICENSE](LICENSE)
-
----
-
-## 📧 Contact
-
-**Vinay Raikar** - [GitHub](https://github.com/VinayRaikar05)
-
-**Project Link**: [https://github.com/VinayRaikar05/emotion-driven-story-teller](https://github.com/VinayRaikar05/emotion-driven-story-teller)
-
----
 
