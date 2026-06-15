@@ -1,6 +1,6 @@
 import os
 
-KEY = "sk_e84c43552fbdeb61d35e4c86050632eec7801f74e572c46b"
+KEY = os.getenv("ELEVENLABS_API_KEY")
 
 def fix_env():
     print("🔧 Fixing backend/.env...")
